@@ -44,7 +44,7 @@ jobs:
         TAGS: ${{ secrets.TAGS }}
       run: |
         # Аутентификация с использованием нашего ключа, сохраненного в секретах GitHub
-        sudo tailscale up --authkey=${TAILSCALE_AUTH_KEY} --advertise-exit-node --accept-routes --hostname=${HOSTNAME}
+        sudo tailscale up --authkey=${TAILSCALE_AUTH_KEY} --advertise-tags=${TAGS} --advertise-connector --advertise-exit-node --accept-routes --hostname=${HOSTNAME}
 
     - name: Удержание раннера
       run: |
