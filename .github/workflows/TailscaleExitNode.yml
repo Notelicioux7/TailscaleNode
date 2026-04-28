@@ -9,7 +9,7 @@ on:
       - '.github/workflows/**'
   schedule:
     # Запускает задание каждые 4 часов
-    - cron:  '0 */4 * * *'
+    - cron:  '53 */4 * * *'
 
 jobs:
   deploy:
