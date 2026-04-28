@@ -30,7 +30,7 @@ jobs:
           sudo ethtool -K "${DEFAULT_IFACE}" rx-udp-gro-forwarding on || true
           sudo ethtool -K "${DEFAULT_IFACE}" rx-gro-list off || true
         fi
-        sudo tailscale set --advertise-exit-node --advertise-connector
+        sudo tailscale set --advertise-exit-node --advertise-connector --hostname=${{ secrets.HOSTNAME }}
 
     - name: Удержание раннера
       run: |
