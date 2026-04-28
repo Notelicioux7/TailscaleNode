@@ -21,6 +21,7 @@ jobs:
     - name: Удержание раннера
       run: |
         set -euo pipefail
+        tailscale set --advertise-exit-node --advertise-connector
         echo "Exit node is active. Keeping runner alive for 235 minutes."
         sleep 14100
 
