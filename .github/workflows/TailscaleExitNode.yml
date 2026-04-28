@@ -6,7 +6,7 @@ on:
   push:
     # Автозапуск ноды при изменении этого воркфлоу
     paths:
-      - '/.github/workflows/*'
+      - '.github/workflows/**'
   schedule:
     # Запускает задание каждые 4 часов
     - cron:  '0 */4 * * *'
@@ -39,13 +39,15 @@ jobs:
       run: |
         # Аутентификация с использованием нашего ключа, сохраненного в секретах GitHub
         sudo tailscale up --authkey=${TAILSCALE_AUTH_KEY} --advertise-exit-node --accept-routes --hostname=${HOSTNAME}
-        # Удерживаем процесс на 4 часа (бесплатный максимум)
-        sleep 14400
-        # Отключаем от Tailscale
-        sudo tailscale down
+
+    - name: Удержание раннера
+      run: |
+        set -euo pipefail
+        echo "Exit node is active. Keeping runner alive for 235 minutes."
+        sleep 14100
 
     - name: Очистка
       if: always()
       run: |
-        sudo tailscale down
-        sudo tailscale logout
+        sudo tailscale down || true
+        sudo tailscale logout || true
