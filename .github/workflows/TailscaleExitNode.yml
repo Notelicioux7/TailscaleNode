@@ -17,11 +17,24 @@ jobs:
         oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
         oauth-secret: ${{ secrets.TAILSCALE_KEY }}
         tags: ${{ secrets.TAGS }}
+    
+    - name: Настройка Tailscale
+      run: |
+        # Включение IPv4-форвардинга для корректной работы Exit-Node согласно "https://tailscale.com/kb/1019/subnets/"
+        echo 'net.ipv4.ip_forward = 1' | sudo tee -a /etc/sysctl.conf
+        echo 'net.ipv6.conf.all.forwarding = 1' | sudo tee -a /etc/sysctl.conf
+        sudo sysctl -p /etc/sysctl.conf
+        # Оптимизация UDP GRO forwarding для Linux Exit Node
+        DEFAULT_IFACE="$(ip -o route get 8.8.8.8 | awk '{for (i=1; i<=NF; i++) if ($i == "dev") {print $(i+1); exit}}')"
+        if [ -n "${DEFAULT_IFACE}" ]; then
+          sudo ethtool -K "${DEFAULT_IFACE}" rx-udp-gro-forwarding on || true
+          sudo ethtool -K "${DEFAULT_IFACE}" rx-gro-list off || true
+        fi
+        sudo tailscale set --advertise-exit-node --advertise-connector
 
     - name: Удержание раннера
       run: |
         set -euo pipefail
-        tailscale set --advertise-exit-node --advertise-connector
         echo "Exit node is active. Keeping runner alive for 235 minutes."
         sleep 14100
 
