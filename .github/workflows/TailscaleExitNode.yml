@@ -1,50 +1,22 @@
-name: Tailscale Exit Node
+name: Tailscale Test 2
 
 on:
-  # Ручной запуск воркфлоу
   workflow_dispatch:
-  push:
-    # Автозапуск ноды при изменении этого воркфлоу
-    paths:
-      - '.github/workflows/**'
-  schedule:
-    # Запускает задание каждые 4 часов
-    - cron:  '0 */4 * * *'
 
 jobs:
   deploy:
-    # Запуск на облачной Ubuntu в MS Azure
     runs-on: ubuntu-latest
     timeout-minutes: 240
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Установка Tailscale
-      run: |
-        # Выполнение автоустановки по скрипту с "https://tailscale.com/download"
-        curl -fsSL https://tailscale.com/install.sh | sh
-        # Включение IPv4-форвардинга для корректной работы Exit-Node согласно "https://tailscale.com/kb/1019/subnets/"
-        echo 'net.ipv4.ip_forward = 1' | sudo tee -a /etc/sysctl.conf
-        echo 'net.ipv6.conf.all.forwarding = 1' | sudo tee -a /etc/sysctl.conf
-        sudo sysctl -p /etc/sysctl.conf
-        # Оптимизация UDP GRO forwarding для Linux Exit Node
-        DEFAULT_IFACE="$(ip -o route get 8.8.8.8 | awk '{for (i=1; i<=NF; i++) if ($i == "dev") {print $(i+1); exit}}')"
-        if [ -n "${DEFAULT_IFACE}" ]; then
-          sudo ethtool -K "${DEFAULT_IFACE}" rx-udp-gro-forwarding on || true
-          sudo ethtool -K "${DEFAULT_IFACE}" rx-gro-list off || true
-        fi
-
-    - name: Авторизация в Tailscale и настройка Exit Node
-      env:
-        # Предварительно нужно получить токен на "https://login.tailscale.com/admin/settings/keys" и указать его в секрете вашей репы
-        TAILSCALE_AUTH_KEY: ${{ secrets.TAILSCALE_KEY }}
-        # Предварительно нужное имя машины нужно добавить в секрет HOSTNAME
-        HOSTNAME: ${{ secrets.HOSTNAME }}
-        TAGS: ${{ secrets.TAGS }}
-      run: |
-        # Аутентификация с использованием нашего ключа, сохраненного в секретах GitHub
-        sudo tailscale up --authkey=${TAILSCALE_AUTH_KEY} --advertise-tags=${TAGS} --advertise-connector --advertise-exit-node --accept-routes --hostname=${HOSTNAME}
+    - name: Авторизация в Tailscale
+      uses: tailscale/github-action@v4
+      with:
+        oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+        oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
+        tags: ${{ secrets.TAGS }}
 
     - name: Удержание раннера
       run: |
